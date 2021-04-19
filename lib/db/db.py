@@ -1,8 +1,11 @@
 from os.path import isfile
+
 from sqlite3 import connect
 
-DB_PATH = '../../data/db/database.db'
-BUILD_PATH = '../../data/db/build.sql'
+from apscheduler.triggers.cron import CronTrigger
+
+DB_PATH = './data/db/database.db'
+BUILD_PATH = './data/db/build.sql'
 
 connection = connect(DB_PATH, check_same_thread = False)
 curset = connection.cursor()
@@ -19,10 +22,14 @@ def build():
         scriptexec(BUILD_PATH)
 
 def commit_run():
+    #print('[EnodestBot] Committing to the db...')
     connection.commit()
 
 def close():
     connection.close()
+
+def autosave(scheduler):
+    scheduler.add_job(commit_run, CronTrigger(second = 0))
 
 def field(command, *values):
     curset.execute(command, tuple(values))
