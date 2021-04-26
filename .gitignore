@@ -1,5 +1,4 @@
 *.db
 *.db-journal
 __pycache__
-lib/bot/token
-lib/bot/owner_ids
+*.env
