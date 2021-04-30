@@ -6,7 +6,8 @@ import string
 import os
 
 from googleapiclient.discovery import build
-from discord.ext.commands import command, Cog
+from discord.ext.commands import command, has_permissions, Cog
+from discord.ext.commands import BadArgument, MissingPermissions
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -146,7 +147,7 @@ class MusicPlayer(Cog):
             await self.playlist(data, msg)
             return await msg.send(f"Added playlist {data['title']} to queue")
         self.player[msg.guild.id]['queue'].append({'title': title, 'author': msg})
-        return await msg.send(f"**{title} added to queue**".title())
+        return await msg.send(f"Added to queue", delete_after = 20)
 
     async def voice_check(self, msg):
         if msg.voice_client is not None:
@@ -240,7 +241,7 @@ class MusicPlayer(Cog):
                 return await msg.send("Please join the same voice channel as the bot to add song to queue")
 
     @command(name = 'repeat')
-    @commands.has_permissions(manage_channels = True)
+    @has_permissions(manage_channels = True)
     async def repeat(self, msg):
         if msg.guild.id in self.player:
             if msg.voice_client.is_playing() is True:
@@ -253,7 +254,7 @@ class MusicPlayer(Cog):
         return await msg.send("Bot not in voice channel or playing music")
 
     @command(name = 'reset', aliases = ['restart-loop'])
-    @commands.has_permissions(manage_channels = True)
+    @has_permissions(manage_channels = True)
     async def reset(self, msg):
         if msg.voice_client is None:
             return await msg.send(f"{msg.author.display_name}, there is no audio currently playing from the bot.")
@@ -265,7 +266,7 @@ class MusicPlayer(Cog):
         msg.voice_client.stop()
 
     @command(name = 'skip')
-    @commands.has_permissions(manage_channels = True)
+    @has_permissions(manage_channels = True)
     async def skip(self, msg):
         if msg.voice_client is None:
             return await msg.send("No music currently playing.".title(), delete_after = 60)
@@ -278,7 +279,7 @@ class MusicPlayer(Cog):
         return await msg.message.add_reaction(emoji = '✅')
 
     @command(name = 'stop')
-    @commands.has_permissions(manage_channels = True)
+    @has_permissions(manage_channels = True)
     async def stop(self, msg):
         if msg.voice_client is None:
             return await msg.send("Bot is not connect to a voice channel")
@@ -293,7 +294,7 @@ class MusicPlayer(Cog):
             return await msg.send(f"{msg.author.display_name}, there is no audio currently playing or songs in queue")
 
     @command(name = 'leave', aliases = ['get-out', 'disconnect', 'leave-voice'])
-    @commands.has_permissions(manage_channels = True)
+    @has_permissions(manage_channels = True)
     async def leave(self, msg):
         if msg.author.voice is not None and msg.voice_client is not None:
             if msg.voice_client.is_playing() is True or self.player[msg.guild.id]['queue']:
@@ -305,7 +306,7 @@ class MusicPlayer(Cog):
             return await msg.send("You must be in the same voice channel as bot to disconnect it via command")
 
     @command(name = 'pause')
-    @commands.has_permissions(manage_channels = True)
+    @has_permissions(manage_channels = True)
     async def pause(self, msg):
         if msg.author.voice is not None and msg.voice_client is not None:
             if msg.voice_client.is_paused() is True:
@@ -315,7 +316,7 @@ class MusicPlayer(Cog):
                 await msg.message.add_reaction(emoji = '✅')
 
     @command(name = 'resume')
-    @commands.has_permissions(manage_channels = True)
+    @has_permissions(manage_channels = True)
     async def resume(self, msg):
         if msg.author.voice is not None and msg.voice_client is not None:
             if msg.voice_client.is_paused() is False:
@@ -362,13 +363,13 @@ class MusicPlayer(Cog):
 
     @join.error
     async def join_error(self, msg, error):
-        if isinstance(error, commands.BadArgument):
+        if isinstance(error, BadArgument):
             return msg.send(error)
         if error.args[0] == 'Command raised an exception: Exception: playing':
             return await msg.send("Please join the same voice channel as the bot to add song to queue".title())
 
     @command(name = 'volume', aliases = ['vol'])
-    @commands.has_permissions(manage_channels = True)
+    @has_permissions(manage_channels = True)
     async def volume(self, msg, vol: int):
         vol = min(vol, 200)
         vol /= 100
@@ -378,7 +379,7 @@ class MusicPlayer(Cog):
             return await msg.message.add_reaction(emoji = '✅')
         return await msg.send("Please join the same voice channel as the bot to use the command".title(), delete_after = 30)
 
-    @commands.command(name = 'download')
+    @command(name = 'download')
     async def download(self, ctx, *, song):
         try:
             with youtube_dl.YoutubeDL(ytdl_download_format_options) as ydl:
@@ -398,7 +399,7 @@ class MusicPlayer(Cog):
 
     @volume.error
     async def volume_error(self, msg,error):
-        if isinstance(error, commands.MissingPermissions):
+        if isinstance(error, MissingPermissions):
             return await msg.send("Manage channels or admin perms required to change volume", delete_after = 30)
 
     @Cog.listener()
