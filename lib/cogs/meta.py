@@ -14,11 +14,11 @@ class meta(Cog):
 		self.bot = bot
 
 		self._message = "watching >help | {users:,} users in {guilds:,} servers"
-		bot.scheduler.add_job(self.set, CronTrigger(second=0))
+		bot.scheduler.add_job(self.set, CronTrigger(second = 0))
 
 	@property
 	def message(self):
-		return self._message.format(users=len(self.bot.users), guilds=len(self.bot.guilds))
+		return self._message.format(users = len(self.bot.users), guilds = len(self.bot.guilds))
 
 	@message.setter
 	def message(self, value):
@@ -28,34 +28,45 @@ class meta(Cog):
 		self._message = value
 
 	async def set(self):
-		_type, _name = self.message.split(" ", maxsplit=1)
+		_type, _name = self.message.split(" ", maxsplit = 1)
 
-		await self.bot.change_presence(activity=Activity(
-			name=_name, type=getattr(ActivityType, _type, ActivityType.playing)
-		))
+		await self.bot.change_presence(activity=Activity(name = _name, type = getattr(ActivityType, _type, ActivityType.playing)))
 
-	@command(name="setactivity")
+	@command(name = "setactivity")
 	async def set_activity_message(self, ctx, *, text: str):
 		self.message = text
 		await self.set()
 
-	@command(name="ping")
+	@command(name = "ping")
 	async def ping(self, ctx):
-		start = time()
-		message = await ctx.send(f"Pong! DWSP latency: {self.bot.latency*1000:,.0f} ms.")
-		end = time()
+		ping = self.bot.latency
+		ping_emoji = '🟩🔳🔳🔳🔳'
 
-		await message.edit(content=f"Pong! DWSP latency: {self.bot.latency*1000:,.0f} ms. Response time: {(end-start)*1000:,.0f} ms.")
+		if ping > 0.100:
+			ping_emoji = '🟧🟩🔳🔳🔳'
+		elif ping > 0.150:
+			ping_emoji = '🟥🟧🟩🔳🔳'
+		elif ping > 0.200:
+			ping_emoji = '🟥🟥🟧🟩🔳'
+		elif ping > 0.250:
+			ping_emoji = '🟥🟥🟥🟧🟩'
+		elif ping > 0.300:
+			ping_emoji = '🟥🟥🟥🟥🟧'
+		else:
+			ping_emoji = '🟥🟥🟥🟥🟥'
 
-	@command(name="stats")
+		message = await ctx.send('Пожалуйста, подождите. . .')
+		await message.edit(content = f'Понг! {ping_emoji} `{ping * 1000:.0f}ms` :ping_pong:')
+
+	@command(name = "stats")
 	async def show_bot_stats(self, ctx):
 		embed = Embed(title="Bot stats", colour=ctx.author.colour, thumbnail=self.bot.user.avatar_url, timestamp=datetime.utcnow())
 
 		proc = Process()
 		with proc.oneshot():
-			uptime = timedelta(seconds=time()-proc.create_time())
+			uptime = timedelta(seconds = time() - proc.create_time())
 			cpu_time = timedelta(seconds=(cpu := proc.cpu_times()).system + cpu.user)
-			mem_total = virtual_memory().total / (1024**2)
+			mem_total = virtual_memory().total / (1024 ** 2)
 			mem_of_total = proc.memory_percent()
 			mem_usage = mem_total * (mem_of_total / 100)
 
@@ -69,15 +80,15 @@ class meta(Cog):
 		]
 
 		for name, value, inline in fields:
-			embed.add_field(name=name, value=value, inline=inline)
+			embed.add_field(name = name, value = value, inline = inline)
 
-		await ctx.send(embed=embed)
+		await ctx.send(embed = embed)
 
-	@command(name="shutdown")
+	@command(name = "shutdown")
 	async def shutdown(self, ctx):
 		await ctx.send("Shutting down...")
 
-		with open("./data/banlist.txt", "w", encoding="utf-8") as f:
+		with open("./data/banlist.txt", "w", encoding = "utf-8") as f:
 			f.writelines([f"{item}\n" for item in self.bot.banlist])
 
 		await self.bot.logout()
