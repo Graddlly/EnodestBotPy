@@ -4,7 +4,7 @@ from typing import Optional
 from better_profanity import profanity
 
 from discord import Embed, Member, NotFound, Object
-from discord.utils import find
+from discord.utils import find, get
 from discord.ext.commands import Cog, Greedy, Converter
 from discord.ext.commands import CheckFailure, BadArgument
 from discord.ext.commands import command, has_permissions, bot_has_permissions
@@ -77,6 +77,27 @@ class moderation(Cog):
 	async def kick_command_error(self, ctx, exc):
 		if isinstance(exc, CheckFailure):
 			await ctx.send("Insufficient permissions to perform that task.")
+
+	@command(name = "mute")
+	@bot_has_permissions(manage_messages = True)
+	@has_permissions(manage_messages = True)
+	async def mute_command(self, ctx, member: Member, *, reason: Optional[str] = "No reason provided."):
+		if not member:
+			await ctx.send("One or more required arguments are missing.")
+		else:
+			guild = ctx.guild
+			mutedRole = get(guild.roles, name = "Muted")
+
+			if not mutedRole:
+				mutedRole = await guild.create_role(name = "Muted")
+				for channel in guild.channels:
+					await channel.set_permissions(mutedRole, speak = False, send_messages = False, read_message_history = True, read_messages = False)
+
+			embed = Embed(title = "Muted Member", description = f"{member.mention} was muted ", colour = 0xAFAFAF)
+			embed.add_field(name="Reason: ", value = reason, inline = False)
+			await ctx.send(embed = embed)
+			await member.add_roles(mutedRole, reason = reason)
+			await member.send(f" you have been muted from: {guild.name} reason: {reason}")
 
 	@command(name = "ban")
 	@bot_has_permissions(ban_members = True)
