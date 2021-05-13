@@ -14,3 +14,4 @@ googleapis-common-protos==1.53.0
 gufw==21.4.0
 PyNaCl==1.4.0
 youtube-dl==2021.4.26
+psutil==5.8.0
